@@ -6,6 +6,9 @@ listener. SSH forwards this listener to guest loopback; guest NAT stays restrict
 import ipaddress,re,select,socket,socketserver,threading
 ALLOWED={'api.openai.com','auth.openai.com','chatgpt.com','chat.openai.com',
          'ab.chatgpt.com','cdn.oaistatic.com','persistent.oaistatic.com',
+         # Regional plugin bundle hosts observed in the authenticated catalog.
+         'sdmntprbrazilsouth.oaiusercontent.com','sdmntprsouthcentralus.oaiusercontent.com',
+         'sdmntprcentralus.oaiusercontent.com','sdmntprcentralindia.oaiusercontent.com',
          'github.com','api.github.com','raw.githubusercontent.com',
          'codeload.github.com','objects.githubusercontent.com',
          'registry.npmjs.org','pypi.org','files.pythonhosted.org','archive.archlinux.org'}

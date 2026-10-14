@@ -53,3 +53,19 @@ The daily profile uses a separate Codex home and tmux server. Deterministic
 acceptance runs use the real Codex CLI against an explicitly labelled local
 model fixture. Live account authorization and live service availability are
 separate daily-use checks and are never inferred from the fixture tests.
+
+Live account qualification additionally exercised C-a launch, a real model turn
+that created/read a scratch file, and C-s forking with an independent child turn.
+These network-dependent checks are separate from the deterministic 70-case suite.
+The keyboard driver holds Enter for 20 ms because zero-duration presses were
+ignored by the live TUI; this dwell remains inside measured input time.
+
+The HTTPS proxy additionally permits four exact regional plugin-bundle hosts
+observed in the authenticated catalog. OpenAI identifies `oaiusercontent.com`
+as an expected content domain in its [network guidance](https://help.openai.com/en/articles/9247338-network-recommendations-for-chatgpt-errors-on-web-and-apps).
+The proxy still rejects private addresses, unlisted hosts and non-443 ports.
+
+With two live daily Codex sessions retained in the two-GiB guest, a regression
+run exceeded the unchanged five-second Codex startup limit. A subsequent run
+passed all 70 cases in 24.7 seconds. The failed run is retained; startup
+reliability under concurrent use and the 20-second total budget remain unmet.

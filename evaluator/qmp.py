@@ -48,9 +48,17 @@ class QMP:
         events=[]
         for chord in chords:
             names=[aliases.get(k,k) for k in chord.split('+')]
-            for down,keys in [(True,names),(False,list(reversed(names)))]:
-                events.extend(dict(type='key',data=dict(down=down,key=dict(type='qcode',data=n))) for n in keys)
-        self.call('input-send-event',dict(events=events))
+            if names[-1]=='ret':
+                # A zero-duration Enter can be ignored by the live terminal TUI.
+                # Include a short physical key dwell in the measured input time.
+                if events:self.call('input-send-event',dict(events=events));events=[]
+                for down,keys in [(True,names),(False,list(reversed(names)))]:
+                    self.call('input-send-event',dict(events=[dict(type='key',data=dict(down=down,key=dict(type='qcode',data=n))) for n in keys]))
+                    if down:time.sleep(.02)
+            else:
+                for down,keys in [(True,names),(False,list(reversed(names)))]:
+                    events.extend(dict(type='key',data=dict(down=down,key=dict(type='qcode',data=n))) for n in keys)
+        if events:self.call('input-send-event',dict(events=events))
         self.previous_key=chords[-1]
         time.sleep(.002)
 
