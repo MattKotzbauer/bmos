@@ -4,6 +4,7 @@
 !bmos.ts
 !tools/
 !tools/*.py
+!tools/*.ts
 !evaluator/
 !evaluator/*.py
 !recipes/
@@ -13,3 +14,6 @@
 !guest/*.sh
 !docs/
 !docs/*.md
+!vm/
+!vm/*.py
+!vm/*.sh

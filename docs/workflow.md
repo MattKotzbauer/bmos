@@ -33,3 +33,23 @@ is intentionally empty.
 
 Publication uses an explicit path allowlist and credential scanning. Never push
 an existing private lab's Git history into this public repository.
+
+The checked-in `vm/` scripts are the actual rootless QEMU launcher, private SSH
+transport, readiness check and live isolation audit. They intentionally preserve
+the audited Intel render-node and two-CPU/two-GiB guest profile. They require the
+private lab's pinned parent images, seed image and generated guest SSH identity;
+none of those private artifacts is distributed here. `guest/` contains the
+kernel deployment and daily-session helpers. A kernel source/configuration
+change uses `recipes/linux.json`, performs a real boot and checks running kernel
+notes against the linked artifact before any graphical pass is accepted.
+
+The bounded kernel build retains x86 decoder self-tests. On the pinned guest,
+`GAWK_GNU_MATCHERS=1` produced the exact same full 439 MB disassembly-formatting
+output as gawk's default matcher, reducing that measured stage from 183.9 to
+50.2 seconds. This does not imply a 20-second kernel build. The comparison tool
+is `guest/compare-awk.py`; its private evidence retains both output hashes.
+
+The daily profile uses a separate Codex home and tmux server. Deterministic
+acceptance runs use the real Codex CLI against an explicitly labelled local
+model fixture. Live account authorization and live service availability are
+separate daily-use checks and are never inferred from the fixture tests.

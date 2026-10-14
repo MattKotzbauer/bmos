@@ -2,7 +2,7 @@
 import hashlib,json,os,pathlib,subprocess,sys,tarfile
 root=pathlib.Path(os.environ['BMOS_LAB']);source=pathlib.Path(sys.argv[1]).resolve();name=sys.argv[2]
 assert name.replace('-','').isalnum() and source.is_dir()
-guard=['bash',str(root/'candidates/terminal-fast/guest.sh')]
+guard=['bash',str(pathlib.Path(__file__).resolve().parents[1]/'vm/guest.sh')]
 files=subprocess.check_output(['git','-C',str(source),'ls-files','-z']).decode().split('\0');manifest={}
 for f in filter(None,files):
  p=source/f
@@ -13,7 +13,6 @@ for f in filter(None,files):
 assert manifest,'Track source files in Git before testing'
 dest=f'/home/matt/bmos-build/{name}'
 old=subprocess.check_output(guard+[f"cat {dest}/source-manifest.json 2>/dev/null || printf '{{}}'"],text=True);previous=json.loads(old)
-changed=[f for f,v in manifest.items() if previous.get(f)!=v]
 changed=[f for f,v in manifest.items() if previous.get(f)!=v]
 process=subprocess.Popen(guard+[f'mkdir -p {dest}/src; tar -xf - -C {dest}/src'],stdin=subprocess.PIPE)
 with tarfile.open(fileobj=process.stdin,mode='w|') as tar:

@@ -1,0 +1,8 @@
+{
+  "name": "linux",
+  "guestSource": true,
+  "build": "export LOCALVERSION= GAWK_GNU_MATCHERS=1; make -j2 bzImage modules",
+  "deploy": "export LOCALVERSION=; sudo --preserve-env=LOCALVERSION python /home/matt/bmos-build/deploy-kernel.py",
+  "restart": "reboot",
+  "verify": "python /home/matt/bmos-build/verify-kernel.py"
+}

@@ -13,7 +13,7 @@ from framebuffer import Framebuffer
 
 ROOT=Path(os.environ['BMOS_LAB'])
 HERE=ROOT/'candidates/terminal-fast'
-GUEST=HERE/'guest.sh'
+GUEST=Path(__file__).resolve().parents[1]/'vm/guest.sh'
 parser=argparse.ArgumentParser();parser.add_argument('--record',action='store_true');parser.add_argument('--fault',choices=['wrong-input','frozen-compositor','wrong-program']);args=parser.parse_args()
 start=time.perf_counter()
 space=os.statvfs(ROOT)
@@ -25,6 +25,8 @@ if not args.record:
     manifest=json.loads((gold/'REVIEWED.json').read_text())
     for reference in manifest['references']:
         assert hashlib.sha256((gold/(reference['name']+'.ppm')).read_bytes()).hexdigest()==reference['sha256'],reference['name']
+        for variant in reference.get('variants',[]):
+            assert variant['reviewed'] and hashlib.sha256((gold/variant['file']).read_bytes()).hexdigest()==variant['sha256']
 
 subprocess.run(['bash',str(GUEST),'python /home/matt/eval/terminal-fast/prepare-scene.py'],check=True,stdout=subprocess.DEVNULL)
 observer=subprocess.Popen(['bash',str(GUEST),'python /home/matt/eval/terminal-fast/observer.py'],stdin=subprocess.PIPE,stdout=subprocess.PIPE,text=True,bufsize=1)
@@ -119,12 +121,13 @@ def step(name,action,predicate,roi=(0,90,1280,762),timeout=3):
         type_('G$i + 1jk');action() # Edit the real program, then use the real runner.
     else:action()
     input_done=time.perf_counter()
-    reference=None if args.record else normalized(Image.open(gold/(name+'.ppm')),name).crop(roi)
+    reference=None if args.record else [normalized(Image.open(gold/file),name).crop(roi).tobytes() for file in [name+'.ppm']+[v['file'] for v in spec.get('variants',[])]]
     last=None;state=False;attempts=0;checked_frame=None
     while time.perf_counter()-t<timeout:
         last=frame.capture();observed_at=time.perf_counter();attempts+=1
         if last is not checked_frame:
-            visual=reference is None or ImageChops.difference(normalized(last,name).crop(roi),reference).getbbox() is None
+            actual=normalized(last,name).crop(roi)
+            visual=reference is None or actual.tobytes() in reference
             checked_frame=last
         # Avoid polling app internals while the external screen is visibly wrong.
         # The same native outcomes are still mandatory before accepting a frame.
@@ -197,7 +200,7 @@ try:
     step('tmux-swap-left',lambda:keys('alt+shift+h'),lambda:observe('tmux')['panes'].splitlines()[0].split('\t')[2]=='nvim')
     step('tmux-zoom',lambda:keys('alt+o'),lambda:tmuxcheck(panes=2,zoom=1))
     step('tmux-unzoom',lambda:keys('alt+o'),lambda:tmuxcheck(panes=2,zoom=0))
-    step('tmux-window',lambda:keys('alt+t'),lambda:tmuxcheck(windows=2),roi=(0,46,1050,770))
+    step('tmux-window',lambda:keys('alt+t'),lambda:tmuxcheck(windows=2) and '\tbash\t1\t' in observe('tmux')['windows'],roi=(0,46,1050,770))
     step('tmux-rename-prompt',lambda:keys('alt+r'),lambda:True,roi=(0,46,1050,69))
     step('tmux-rename',lambda:type_('work\n'),lambda:'\twork\t1\t' in observe('tmux')['windows'],roi=(0,46,1050,770))
     step('tmux-previous',lambda:keys('alt+p'),lambda:tmuxcheck(text='XYZalpha one'),roi=(0,46,1050,770))
@@ -235,10 +238,10 @@ finally:
     for result,future in zip(results,pending):result.update(future.result())
     writer.shutdown(wait=True)
     elapsed=time.perf_counter()-start
-    functional_pass=not failure
     if not args.record and not failure:
         if [r['name'] for r in results] != [r['name'] for r in manifest['references']]:failure='Incomplete or reordered acceptance contract'
-        elif elapsed>20:failure='Suite exceeded the 20 second performance contract'
+    functional_pass=not failure
+    if not args.record and not failure and elapsed>20:failure='Suite exceeded the 20 second performance contract'
     report=dict(failedStep=failed_step,functionalPass=functional_pass,calibration=args.record,fault=args.fault,pass_=not failure and not args.record,failure=failure,totalSeconds=elapsed,budgetSeconds=20,budgetMet=elapsed<=20,results=results,scope='terminal workflow; coverage inventory required, not universal OS parity',capture='QEMU external VNC EGL readback; host monotonic clock, includes observer overhead')
     (out/'results.json').write_text(json.dumps(report,indent=2));print(out);print('TOTAL',elapsed)
     sys.exit(1 if failure else 0)
