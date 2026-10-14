@@ -8,7 +8,36 @@ const token=readFileSync(join(root,'private/bmos-view-token'),'utf8').trim();
 if(token.length<40)throw Error('Expected a private random viewer token');
 const assets=join(root,'artifacts/bmos-viewer/noVNC-1.7.0');
 const origin='http://127.0.0.1:6080';
-const html=`<!doctype html><html><head><meta name="referrer" content="no-referrer"><title>BMOS terminal</title><style>body{margin:0;background:#171922;color:white;font:14px sans-serif}nav{height:32px;display:flex;align-items:center;gap:12px;padding:0 12px}#screen{height:calc(100vh - 32px)}button{cursor:pointer}</style></head><body><nav><strong>BMOS</strong><span id="status">Connecting…</span><button id="full">Full screen</button><button id="ctrl">Ctrl</button><button id="esc">Esc</button></nav><div id="screen"></div><script type="module">import RFB from '/novnc/core/rfb.js';const rfb=new RFB(document.querySelector('#screen'),'ws://127.0.0.1:6080/vnc');rfb.scaleViewport=true;rfb.resizeSession=false;rfb.addEventListener('connect',()=>status.textContent='Connected');rfb.addEventListener('disconnect',()=>status.textContent='Disconnected');const status=document.querySelector('#status');document.querySelector('#full').onclick=()=>document.documentElement.requestFullscreen();document.querySelector('#esc').onclick=()=>rfb.sendKey(0xff1b,'Escape');document.querySelector('#ctrl').onclick=()=>{rfb.sendKey(0xffe3,'ControlLeft',true);setTimeout(()=>rfb.sendKey(0xffe3,'ControlLeft',false),1000)};</script></body></html>`;
+const html=`<!doctype html><html><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"><title>BMOS terminal</title><style>body{margin:0;background:#171922;color:white;font:14px sans-serif}nav{height:32px;display:flex;align-items:center;gap:12px;padding:0 12px}#screen{height:calc(100vh - 32px)}button{cursor:pointer}</style></head><body><nav><strong>BMOS</strong><span id="status">Connecting…</span><button id="full">Full screen</button><button id="ctrl">Ctrl</button><button id="esc">Esc</button><button id="leave" title="Ctrl+Alt+Shift+Q — keep VM sessions running">Leave VM</button><button id="reconnect" hidden>Return to VM</button></nav><div id="screen"></div><script type="module">
+import RFB from '/novnc/core/rfb.js';
+const status=document.querySelector('#status');
+const rfb=new RFB(document.querySelector('#screen'),'ws://127.0.0.1:6080/vnc');
+let leaving=false;
+rfb.scaleViewport=true;rfb.resizeSession=false;
+rfb.addEventListener('connect',()=>status.textContent='Connected');
+rfb.addEventListener('disconnect',()=>{
+  status.textContent=leaving?'Left VM — sessions are still running.':'Disconnected';
+  for(const id of ['full','ctrl','esc','leave'])document.getElementById(id).disabled=true;
+  document.querySelector('#reconnect').hidden=false;
+});
+function leave(){
+  leaving=true;
+  // Release modifiers before closing the transport, including shortcut keys.
+  for(const [key,code] of [[0xffe1,'ShiftLeft'],[0xffe2,'ShiftRight'],[0xffe3,'ControlLeft'],[0xffe4,'ControlRight'],[0xffe9,'AltLeft'],[0xffea,'AltRight']])rfb.sendKey(key,code,false);
+  rfb.blur();rfb.disconnect();
+  if(document.fullscreenElement)document.exitFullscreen();
+}
+window.addEventListener('keydown',event=>{
+  if(event.ctrlKey&&event.altKey&&event.shiftKey&&event.code==='KeyQ'){
+    event.preventDefault();event.stopImmediatePropagation();leave();
+  }
+},true);
+document.querySelector('#leave').onclick=leave;
+document.querySelector('#reconnect').onclick=()=>location.reload();
+document.querySelector('#full').onclick=()=>document.documentElement.requestFullscreen();
+document.querySelector('#esc').onclick=()=>rfb.sendKey(0xff1b,'Escape');
+document.querySelector('#ctrl').onclick=()=>{rfb.sendKey(0xffe3,'ControlLeft',true);setTimeout(()=>rfb.sendKey(0xffe3,'ControlLeft',false),1000)};
+</script></body></html>`;
 Bun.serve<{socket:any}>({hostname:'127.0.0.1',port:6080,
  async fetch(request,server){
   const u=new URL(request.url);

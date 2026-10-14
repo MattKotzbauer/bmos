@@ -69,3 +69,13 @@ With two live daily Codex sessions retained in the two-GiB guest, a regression
 run exceeded the unchanged five-second Codex startup limit. A subsequent run
 passed all 70 cases in 24.7 seconds. The failed run is retained; startup
 reliability under concurrent use and the 20-second total budget remain unmet.
+
+For the existing private lab, run `LAB/bmos/tools/run.sh` (the local lab also has
+`LAB/bmos.sh` pointing to it) and open the private URL it prints. With the VM
+already running this reconnects to the existing daily applications. Bookmark
+`http://127.0.0.1:6080/` after opening that authenticated link in your browser.
+The viewer's **Leave VM** button or **Ctrl+Alt+Shift+Q** disconnects input/display
+and exits browser fullscreen, preserving the running VM and applications.
+**Return to VM** reconnects. Closing the browser tab also leaves the VM running.
+This uses the documented [noVNC disconnect API](https://novnc.com/noVNC/docs/API.html#rfbdisconnect),
+not a guest power-off. No host shell aliases or dotfiles are modified.

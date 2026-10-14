@@ -5,6 +5,7 @@
 !tools/
 !tools/*.py
 !tools/*.ts
+!tools/run.sh
 !evaluator/
 !evaluator/*.py
 !recipes/
