@@ -1,0 +1,8 @@
+{
+  "name": "tmux",
+  "source": "artifacts/bmos-sources/tmux-3.7c",
+  "build": "test -f Makefile || ./configure --prefix=/usr/local; make -j2",
+  "deploy": "sudo install -m755 tmux /usr/local/bin/tmux",
+  "restart": "desktop",
+  "verify": "test \"$(sha256sum tmux | cut -d' ' -f1)\" = \"$(sha256sum /usr/local/bin/tmux | cut -d' ' -f1)\"; pid=$(tmux display-message -p '#{pid}'); test \"$(sha256sum tmux | cut -d' ' -f1)\" = \"$(sha256sum /proc/$pid/exe | cut -d' ' -f1)\"; tmux -V"
+}

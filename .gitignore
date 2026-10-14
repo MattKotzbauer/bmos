@@ -1,0 +1,15 @@
+*
+!.gitignore
+!README.md
+!bmos.ts
+!tools/
+!tools/*.py
+!evaluator/
+!evaluator/*.py
+!recipes/
+!recipes/*.json
+!guest/
+!guest/*.py
+!guest/*.sh
+!docs/
+!docs/*.md
